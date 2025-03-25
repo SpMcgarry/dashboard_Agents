@@ -235,11 +235,21 @@ const ActiveAgents = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+                          <Link href={`/agents/${agent.id}/chat`}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Chat with agent"
+                            >
+                              <MessagesSquare className="h-4 w-4" />
+                            </Button>
+                          </Link>
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => toggleAgentStatus(agent)}
                             disabled={updateStatusMutation.isPending}
+                            title={agent.status === "active" ? "Pause agent" : "Activate agent"}
                           >
                             {agent.status === "active" ? (
                               <Pause className="h-4 w-4" />
@@ -253,6 +263,7 @@ const ActiveAgents = () => {
                             className="text-destructive hover:text-destructive/90"
                             onClick={() => handleDeleteClick(agent)}
                             disabled={deleteMutation.isPending}
+                            title="Delete agent"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -281,10 +292,15 @@ const ActiveAgents = () => {
                               </div>
                             </div>
                             
-                            <div className="mt-3 flex justify-end">
+                            <div className="mt-3 flex justify-end gap-2">
                               <Link href={`/agents/${agent.id}`}>
                                 <Button size="sm" variant="outline">
                                   View Details
+                                </Button>
+                              </Link>
+                              <Link href={`/agents/${agent.id}/chat`}>
+                                <Button size="sm" variant="default">
+                                  Chat
                                 </Button>
                               </Link>
                             </div>

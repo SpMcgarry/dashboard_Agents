@@ -13,6 +13,7 @@ import Dashboard from "@/pages/Dashboard";
 import CreateAgent from "@/pages/CreateAgent";
 import AgentTemplates from "@/pages/AgentTemplates";
 import ActiveAgents from "@/pages/ActiveAgents";
+import AgentChat from "@/pages/AgentChat";
 import LLMSettings from "@/pages/LLMSettings";
 import ApiIntegrations from "@/pages/ApiIntegrations";
 import NotFound from "@/pages/not-found";
@@ -31,6 +32,7 @@ function Router() {
             <Route path="/create-agent" component={CreateAgent} />
             <Route path="/templates" component={AgentTemplates} />
             <Route path="/agents" component={ActiveAgents} />
+            <Route path="/agents/:id/chat" component={AgentChat} />
             <Route path="/llm-settings" component={LLMSettings} />
             <Route path="/integrations" component={ApiIntegrations} />
             <Route component={NotFound} />
