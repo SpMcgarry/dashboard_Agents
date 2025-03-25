@@ -10,13 +10,13 @@ interface TabItemProps {
 
 const TabItem = ({ label, href, isActive }: TabItemProps) => (
   <Link href={href}>
-    <a className={`px-4 py-2 text-sm font-medium ${
+    <div className={`px-4 py-2 text-sm font-medium cursor-pointer ${
       isActive 
         ? 'tab-active' 
         : 'text-neutral-500 hover:text-neutral-700'
     }`}>
       {label}
-    </a>
+    </div>
   </Link>
 );
 

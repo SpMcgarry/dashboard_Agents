@@ -9,11 +9,22 @@ import {
   personaSchema,
   aiEngineSchema,
   apiIntegrationSchema,
-  experienceSettingsSchema
+  experienceSettingsSchema,
+  loginSchema,
+  registerSchema,
+  userProfileSchema
 } from "@shared/schema";
 import { createAgent } from "./lib/agent";
 import { OpenAIService } from "./lib/openai";
 import { listAvailableIntegrations, getIntegrationByType } from "./lib/integrations";
+import { 
+  registerUser, 
+  loginUser, 
+  authenticate, 
+  updateUserProfile,
+  changeUserPassword,
+  getCurrentUser
+} from "./lib/auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -356,6 +367,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errors: error.errors 
         });
       }
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Authentication Routes
+  apiRouter.post("/register", async (req, res) => {
+    try {
+      const validatedData = registerSchema.parse(req.body);
+      
+      // Check if passwords match
+      if (validatedData.password !== validatedData.confirmPassword) {
+        return res.status(400).json({ message: "Passwords do not match" });
+      }
+      
+      const user = await registerUser(validatedData);
+      res.status(201).json(user);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      // Handle expected errors from auth service
+      if (error.message === "Username already taken" || error.message === "Email already in use") {
+        return res.status(400).json({ message: error.message });
+      }
+      
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  apiRouter.post("/login", async (req, res) => {
+    try {
+      const validatedData = loginSchema.parse(req.body);
+      
+      const { token, user } = await loginUser(validatedData);
+      res.json({ token, user });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      // Handle expected error from auth service
+      if (error.message === "Invalid username or password") {
+        return res.status(401).json({ message: error.message });
+      }
+      
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Protected routes - require authentication
+  apiRouter.get("/user", authenticate, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const user = await getCurrentUser(userId);
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  apiRouter.put("/user/profile", authenticate, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const validatedData = userProfileSchema.parse(req.body);
+      
+      const updatedUser = await updateUserProfile(userId, validatedData);
+      res.json(updatedUser);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      if (error.message === "User not found") {
+        return res.status(404).json({ message: error.message });
+      }
+      
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  apiRouter.put("/user/password", authenticate, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const { currentPassword, newPassword } = z.object({
+        currentPassword: z.string().min(6),
+        newPassword: z.string().min(6)
+      }).parse(req.body);
+      
+      await changeUserPassword(userId, currentPassword, newPassword);
+      res.json({ message: "Password changed successfully" });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      if (error.message === "User not found") {
+        return res.status(404).json({ message: error.message });
+      }
+      
+      if (error.message === "Current password is incorrect") {
+        return res.status(400).json({ message: error.message });
+      }
+      
       res.status(500).json({ message: error.message });
     }
   });

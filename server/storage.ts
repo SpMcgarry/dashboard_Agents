@@ -152,7 +152,8 @@ export class MemStorage implements IStorage {
       avatar: null,
       isActive: true,
       created: now,
-      lastLogin: now
+      lastLogin: now,
+      fullName: insertUser.fullName || null,  // Ensure it's string | null
     };
     this.users.set(id, user);
     return user;
@@ -205,7 +206,14 @@ export class MemStorage implements IStorage {
       ...template, 
       id, 
       created: now,
-      lastUpdated: now
+      lastUpdated: now,
+      apiIntegrations: template.apiIntegrations || [],
+      experienceSettings: template.experienceSettings || { 
+        memoryType: "conversation", 
+        retentionPeriod: "session",
+        summarizationEnabled: false 
+      },
+      isTemplate: template.isTemplate ?? true
     };
     this.agentTemplates.set(id, agentTemplate);
     return agentTemplate;
@@ -245,7 +253,11 @@ export class MemStorage implements IStorage {
       ...agent, 
       id, 
       created: now,
-      lastActive: now
+      lastActive: now,
+      status: agent.status || "inactive",
+      templateId: agent.templateId || null,
+      experienceSummary: agent.experienceSummary || { interactions: 0, lastSummary: "" },
+      conversationHistory: agent.conversationHistory || { messages: [] }
     };
     this.activeAgents.set(id, activeAgent);
     return activeAgent;
