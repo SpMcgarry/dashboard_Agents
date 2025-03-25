@@ -12,10 +12,15 @@ import {
 
 // Interface for storage operations
 export interface IStorage {
-  // User operations (kept from original)
+  // User operations and authentication
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
+  updateUserLogin(id: number): Promise<boolean>;
+  changePassword(id: number, newPassword: string): Promise<boolean>;
+  deleteUser(id: number): Promise<boolean>;
   
   // Agent template operations
   getAllAgentTemplates(): Promise<AgentTemplate[]>;
@@ -57,6 +62,16 @@ export class MemStorage implements IStorage {
   }
 
   private initializeDefaultData() {
+    // Add a default admin user
+    const adminUser: InsertUser = {
+      username: "admin",
+      password: "adminpass123", // This would normally be hashed
+      email: "admin@example.com",
+      fullName: "Administrator"
+    };
+    
+    this.createUser(adminUser);
+    
     // Add a sample template
     const sampleTemplate: InsertAgentTemplate = {
       name: "Customer Service Assistant",
@@ -110,7 +125,7 @@ export class MemStorage implements IStorage {
     this.createActiveAgent(sampleAgent);
   }
 
-  // User operations (kept from original)
+  // User operations and authentication
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
   }
@@ -120,12 +135,58 @@ export class MemStorage implements IStorage {
       (user) => user.username === username,
     );
   }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
+    const now = new Date();
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      role: "user",
+      avatar: null,
+      isActive: true,
+      created: now,
+      lastLogin: now
+    };
     this.users.set(id, user);
     return user;
+  }
+  
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, ...userData };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  async updateUserLogin(id: number): Promise<boolean> {
+    const user = this.users.get(id);
+    if (!user) return false;
+    
+    user.lastLogin = new Date();
+    this.users.set(id, user);
+    return true;
+  }
+  
+  async changePassword(id: number, newPassword: string): Promise<boolean> {
+    const user = this.users.get(id);
+    if (!user) return false;
+    
+    user.password = newPassword;
+    this.users.set(id, user);
+    return true;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    return this.users.delete(id);
   }
 
   // Agent template operations

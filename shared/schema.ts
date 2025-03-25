@@ -2,16 +2,25 @@ import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users table schema (maintaining the existing schema)
+// Users table schema with enhanced fields for authentication and profile
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  email: text("email").notNull().unique(),
+  fullName: text("full_name"),
+  role: text("role").default("user"),
+  avatar: text("avatar"),
+  lastLogin: timestamp("last_login"),
+  isActive: boolean("is_active").default(true),
+  created: timestamp("created").notNull().defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  email: true,
+  fullName: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -99,3 +108,28 @@ export const experienceSettingsSchema = z.object({
 });
 
 export type ExperienceSettings = z.infer<typeof experienceSettingsSchema>;
+
+// Auth schemas
+export const loginSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+export const registerSchema = insertUserSchema.extend({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string(),
+  email: z.string().email("Please enter a valid email address"),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+export const userProfileSchema = z.object({
+  fullName: z.string().optional(),
+  email: z.string().email("Please enter a valid email address"),
+  avatar: z.string().optional(),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
+export type RegisterInput = z.infer<typeof registerSchema>;
+export type UserProfileInput = z.infer<typeof userProfileSchema>;
