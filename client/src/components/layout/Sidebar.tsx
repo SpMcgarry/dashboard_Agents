@@ -14,12 +14,12 @@ const SidebarLink = ({ href, icon, children, isActive }: SidebarLinkProps) => {
   return (
     <li className="mb-2">
       <Link href={href}>
-        <a className={`flex items-center p-2 rounded-md ${
+        <div className={`flex items-center p-2 rounded-md cursor-pointer ${
           isActive ? 'bg-primary-50 text-primary-600 font-medium' : 'hover:bg-neutral-50 text-neutral-700'
         }`}>
           <span className="material-icons mr-2 text-sm">{icon}</span>
           {children}
-        </a>
+        </div>
       </Link>
     </li>
   );

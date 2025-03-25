@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
 import { ActiveAgent } from "@/context/AgentContext";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, RefreshCw, Play, Pause, Trash2 } from "lucide-react";
+import { PlusCircle, RefreshCw, Play, Pause, Trash2, MessagesSquare } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
