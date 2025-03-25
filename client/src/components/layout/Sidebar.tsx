@@ -90,14 +90,14 @@ const Sidebar = () => {
                 {recentAgents.map((agent) => (
                   <li key={agent.id} className="mb-1">
                     <Link href={`/agents/${agent.id}`}>
-                      <a className="flex items-center p-2 rounded-md hover:bg-neutral-50 text-neutral-700 text-sm">
+                      <div className="flex items-center p-2 rounded-md hover:bg-neutral-50 text-neutral-700 text-sm cursor-pointer">
                         <span 
                           className={`w-2 h-2 rounded-full mr-2 ${
                             agent.status === 'active' ? 'bg-success' : 'bg-neutral-300'
                           }`}
                         />
                         <span>{agent.name}</span>
-                      </a>
+                      </div>
                     </Link>
                   </li>
                 ))}

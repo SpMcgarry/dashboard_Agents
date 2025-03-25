@@ -30,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // Error handling middleware
-  app.use((err: any, req: any, res: any, next: any) => {
+  app.use((err: unknown, req: any, res: any, next: any) => {
     if (err instanceof ZodError) {
       return res.status(400).json({ 
         message: "Validation error", 
