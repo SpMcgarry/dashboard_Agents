@@ -98,6 +98,10 @@ interface AgentContextType {
   addIntegration: (integration: APIIntegration) => void;
   removeIntegration: (serviceName: string) => void;
   updateIntegrationStatus: (serviceName: string, status: "active" | "inactive" | "not_connected") => void;
+  agents: ActiveAgent[];
+  addAgent: (agent: ActiveAgent) => void;
+  removeAgent: (id: string) => void;
+  updateAgent: (id: string, updates: Partial<ActiveAgent>) => void;
 }
 
 // Create context
@@ -107,6 +111,7 @@ const AgentContext = createContext<AgentContextType | undefined>(undefined);
 export const AgentProvider = ({ children }: { children: ReactNode }) => {
   const [currentTemplate, setCurrentTemplateState] = useState<AgentTemplate>(initialAgentTemplate);
   const { toast } = useToast();
+  const [agents, setAgents] = useState<ActiveAgent[]>([]);
 
   // Update template with partial data
   const setCurrentTemplate = useCallback((templateData: Partial<AgentTemplate>) => {
@@ -247,6 +252,23 @@ export const AgentProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [toast]);
 
+  // Add an agent
+  const addAgent = useCallback((agent: ActiveAgent) => {
+    setAgents((prev) => [...prev, agent]);
+  }, []);
+
+  // Remove an agent
+  const removeAgent = useCallback((id: string) => {
+    setAgents((prev) => prev.filter((agent) => agent.id?.toString() !== id));
+  }, []);
+
+  // Update an agent
+  const updateAgent = useCallback((id: string, updates: Partial<ActiveAgent>) => {
+    setAgents((prev) =>
+      prev.map((agent) => (agent.id?.toString() === id ? { ...agent, ...updates } : agent))
+    );
+  }, []);
+
   // Context value
   const value = {
     currentTemplate,
@@ -258,7 +280,11 @@ export const AgentProvider = ({ children }: { children: ReactNode }) => {
     removeTrait,
     addIntegration,
     removeIntegration,
-    updateIntegrationStatus
+    updateIntegrationStatus,
+    agents,
+    addAgent,
+    removeAgent,
+    updateAgent
   };
 
   return <AgentContext.Provider value={value}>{children}</AgentContext.Provider>;

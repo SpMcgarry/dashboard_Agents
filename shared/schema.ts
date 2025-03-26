@@ -29,6 +29,7 @@ export type User = typeof users.$inferSelect;
 // Agent persona/template schema
 export const agentTemplates = pgTable("agent_templates", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
   name: text("name").notNull(),
   role: text("role").notNull(),
   description: text("description").notNull(),
@@ -53,6 +54,7 @@ export type AgentTemplate = typeof agentTemplates.$inferSelect;
 // Active agents schema
 export const activeAgents = pgTable("active_agents", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
   templateId: integer("template_id").references(() => agentTemplates.id),
   name: text("name").notNull(),
   status: text("status").notNull().default("idle"), // idle, active, error
@@ -80,9 +82,35 @@ export const personaSchema = z.object({
 
 export type Persona = z.infer<typeof personaSchema>;
 
+// API Keys schema
+export const apiKeys = pgTable("api_keys", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  provider: text("provider").notNull(), // e.g., "openai", "anthropic"
+  keyName: text("key_name").notNull(), // User-friendly name for the key
+  encryptedKey: text("encrypted_key").notNull(), // Encrypted API key
+  isActive: boolean("is_active").default(true),
+  lastUsed: timestamp("last_used"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"), // Optional expiration date
+  metadata: jsonb("metadata"), // Additional provider-specific settings
+});
+
+export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
+  id: true,
+  encryptedKey: true,
+  createdAt: true,
+  lastUsed: true,
+});
+
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+export type ApiKey = typeof apiKeys.$inferSelect;
+
+// Update AIEngine schema to reference API key
 export const aiEngineSchema = z.object({
   provider: z.enum(["openai", "anthropic", "local"]),
   model: z.string(),
+  apiKeyId: z.number().optional(), // Reference to the API key
   parameters: z.object({
     temperature: z.number().min(0).max(1),
     maxTokens: z.number().optional(),
@@ -133,3 +161,105 @@ export const userProfileSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type UserProfileInput = z.infer<typeof userProfileSchema>;
+
+export interface User {
+  id: number;
+  username: string;
+  password: string;
+  email: string;
+  fullName: string | null;
+  role: 'admin' | 'user';
+  avatar: string | null;
+  isActive: boolean;
+  created: Date;
+  lastLogin: Date;
+}
+
+export interface InsertUser {
+  username: string;
+  password: string;
+  email: string;
+  fullName?: string;
+}
+
+export interface AgentTemplate {
+  id: number;
+  userId: number;
+  name: string;
+  description: string;
+  capabilities: string[];
+  created: Date;
+  lastUpdated: Date;
+  apiIntegrations: any[];
+  experienceSettings: {
+    memoryType: string;
+    retentionPeriod: string;
+    summarizationEnabled: boolean;
+  };
+  isTemplate: boolean;
+}
+
+export interface InsertAgentTemplate {
+  name: string;
+  description: string;
+  capabilities: string[];
+  apiIntegrations?: any[];
+  experienceSettings?: {
+    memoryType: string;
+    retentionPeriod: string;
+    summarizationEnabled: boolean;
+  };
+  isTemplate?: boolean;
+}
+
+export interface ActiveAgent {
+  id: number;
+  userId: number;
+  templateId: number | null;
+  name: string;
+  description: string;
+  status: string;
+  created: Date;
+  lastActive: Date;
+  experienceSummary: {
+    interactions: number;
+    lastSummary: string;
+  };
+  conversationHistory: {
+    messages: any[];
+  };
+}
+
+export interface InsertActiveAgent {
+  name: string;
+  description: string;
+  templateId?: number;
+  status?: string;
+  experienceSummary?: {
+    interactions: number;
+    lastSummary: string;
+  };
+  conversationHistory?: {
+    messages: any[];
+  };
+}
+
+export interface ApiKey {
+  id: number;
+  userId: number;
+  provider: string;
+  keyName: string;
+  encryptedKey: string;
+  isActive: boolean;
+  createdAt: Date;
+  lastUsed: Date | null;
+  expiresAt: Date | null;
+  metadata: Record<string, any>;
+}
+
+export interface InsertApiKey {
+  provider: string;
+  keyName: string;
+  expiresAt?: Date;
+  metadata?: Record<string, any>;
+}

@@ -1,23 +1,42 @@
-import { useState } from "react";
+import React from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ActiveAgent } from "@/context/AgentContext";
+import { cn } from "@/lib/utils";
+import {
+  LayoutDashboard,
+  PlusCircle,
+  FileText,
+  Bot,
+  Settings,
+  Plug,
+  Key,
+} from "lucide-react";
 
 interface SidebarLinkProps {
   href: string;
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
   isActive?: boolean;
 }
 
-const SidebarLink = ({ href, icon, children, isActive }: SidebarLinkProps) => {
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const SidebarLink = ({ href, icon: Icon, children, isActive }: SidebarLinkProps) => {
   return (
     <li className="mb-2">
       <Link href={href}>
         <div className={`flex items-center p-2 rounded-md cursor-pointer ${
           isActive ? 'bg-primary-50 text-primary-600 font-medium' : 'hover:bg-neutral-50 text-neutral-700'
         }`}>
-          <span className="material-icons mr-2 text-sm">{icon}</span>
+          <span className="material-icons mr-2 text-sm">{Icon ? <Icon className={cn(
+            "mr-3 h-5 w-5",
+            isActive ? "text-gray-900" : "text-gray-400"
+          )} /> : null}</span>
           {children}
         </div>
       </Link>
@@ -25,16 +44,25 @@ const SidebarLink = ({ href, icon, children, isActive }: SidebarLinkProps) => {
   );
 };
 
-const Sidebar = () => {
+const Sidebar: React.FC = () => {
   const [location] = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const { data: recentAgents } = useQuery<ActiveAgent[]>({
     queryKey: ['/api/agents'],
     staleTime: 60000, // 1 minute
   });
 
-  // Toggle mobile menu
+  const navigation: NavigationItem[] = [
+    { name: "Dashboard", href: "/", icon: LayoutDashboard },
+    { name: "Create Agent", href: "/create-agent", icon: PlusCircle },
+    { name: "Templates", href: "/templates", icon: FileText },
+    { name: "Active Agents", href: "/agents", icon: Bot },
+    { name: "LLM Settings", href: "/llm-settings", icon: Settings },
+    { name: "Integrations", href: "/integrations", icon: Plug },
+    { name: "API Keys", href: "/api-keys", icon: Key },
+  ];
+
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
@@ -65,21 +93,11 @@ const Sidebar = () => {
         
         <nav className="p-4">
           <ul>
-            <SidebarLink href="/" icon="dashboard" isActive={location === "/"}>
-              Dashboard
-            </SidebarLink>
-            <SidebarLink href="/templates" icon="person" isActive={location === "/templates"}>
-              Agent Templates
-            </SidebarLink>
-            <SidebarLink href="/agents" icon="people" isActive={location === "/agents"}>
-              Active Agents
-            </SidebarLink>
-            <SidebarLink href="/llm-settings" icon="settings" isActive={location === "/llm-settings"}>
-              LLM Settings
-            </SidebarLink>
-            <SidebarLink href="/integrations" icon="extension" isActive={location === "/integrations"}>
-              API Integrations
-            </SidebarLink>
+            {navigation.map((item) => (
+              <SidebarLink key={item.name} href={item.href} icon={item.icon} isActive={location === item.href}>
+                {item.name}
+              </SidebarLink>
+            ))}
             
             {/* Recent Agents Section */}
             {recentAgents && recentAgents.length > 0 && (
@@ -93,10 +111,12 @@ const Sidebar = () => {
                       <div className="flex items-center p-2 rounded-md hover:bg-neutral-50 text-neutral-700 text-sm cursor-pointer">
                         <span 
                           className={`w-2 h-2 rounded-full mr-2 ${
-                            agent.status === 'active' ? 'bg-success' : 'bg-neutral-300'
+                            agent.status === 'active' ? 'bg-green-500' : 
+                            agent.status === 'inactive' ? 'bg-gray-400' : 
+                            'bg-red-500'
                           }`}
                         />
-                        <span>{agent.name}</span>
+                        {agent.name}
                       </div>
                     </Link>
                   </li>
